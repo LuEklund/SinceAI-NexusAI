@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nexora · Automated Service Assurance</title>
+<style>
+  :root { --ink:#12263a; --grey:#6b7a86; --line:#e3e9e7; --bg:#f6f9f8;
+          --cust:#0f8f7a; --op:#2f5d8a; --ep:#1f9d55; --ok:#1f9d55; --warn:#e8891a; --bad:#c94a3d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; font-size:17px; }
+  nav { display:flex; gap:8px; padding:8px; background:#fff; border-bottom:1px solid var(--line); }
+  nav [data-v] { flex:1; padding:12px 0; font-size:21px; font-weight:800; border:2px solid var(--line); border-radius:14px;
+               background:#fff; color:var(--grey); cursor:pointer; }
+  nav [data-v="customer"].on { background:var(--cust); border-color:var(--cust); color:#fff; }
+  nav [data-v="operator"].on { background:var(--op); border-color:var(--op); color:#fff; }
+  nav [data-v="europress"].on { background:var(--ep); border-color:var(--ep); color:#fff; }
+  .who { padding:10px 22px; color:#fff; font-weight:700; font-size:16px; }
+  .wrap { max-width:740px; margin:0 auto; padding:16px 12px 20px; }
+  h2 { font-size:24px; margin:0 0 10px; }
+  .card { background:#fff; border:2px solid var(--line); border-radius:16px; padding:10px 14px; }
+  .grid { display:grid; gap:8px; }
+  .choice { display:flex; align-items:center; gap:16px; cursor:pointer; }
+  .choice:hover { border-color:var(--cust); }
+  .choice.sel { border-color:var(--cust); box-shadow:0 0 0 2px var(--cust) inset; }
+  .choice .t { font-weight:800; font-size:19px; }
+  .muted { color:var(--grey); font-size:15px; }
+  .smart { background:#e9f6f2; border-color:#bfe5d9; }
+  .or { text-align:center; color:var(--grey); font-weight:700; margin:6px 0; }
+  .badge { width:42px; height:42px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+           color:#fff; font-weight:900; font-size:20px; flex:none; }
+  .Gold { background:#d9a520; } .Silver { background:#a7b0b8; } .Bronze { background:#b8733a; } .None { background:#dfe5e3; color:var(--grey); }
+  .SMART { background:var(--cust); font-size:13px; }
+  .status { display:flex; align-items:center; gap:18px; }
+  .status .icon { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+                  font-size:34px; color:#fff; flex:none; }
+  .status .big { font-size:24px; font-weight:900; }
+  .s-ok { background:var(--ok); } .s-wait { background:#8a97a1; } .s-warn { background:var(--warn); } .s-run { background:var(--op); }
+  .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0; }
+  .kpi .v { font-size:32px; font-weight:900; } .kpi .l { color:var(--grey); font-size:14px; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; color:var(--grey); font-weight:600; font-size:14px; padding:8px 6px; border-bottom:1px solid var(--line); }
+  td { padding:6px 6px; border-bottom:1px solid var(--line); }
+  .r { text-align:right; }
+  tr.sum td { font-weight:800; border-bottom:0; }
+  .ok { color:var(--ok); font-weight:800; } .warn { color:var(--warn); font-weight:800; } .bad { color:var(--bad); font-weight:800; }
+  .btn { padding:13px 18px; border:0; border-radius:12px; background:var(--ink); color:#fff; font-weight:800; font-size:16px; cursor:pointer; }
+  .btn.light { background:#eef2f1; color:var(--ink); }
+  .btn.cust { background:var(--cust); }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .sp { height:16px; }
+  .log li { list-style:none; padding:9px 0; border-bottom:1px solid var(--line); display:flex; gap:12px; }
+  .log { margin:0; padding:0; }
+  .log .time { color:var(--grey); min-width:86px; font-size:15px; }
+  .log .who2 { font-weight:800; min-width:92px; }
+  .w-SMART { color:var(--cust); } .w-Nexora { color:var(--ep); } .w-Operator { color:var(--op); } .w-Customer { color:var(--ink); }
+  .bar { height:12px; background:var(--line); border-radius:99px; overflow:hidden; width:160px; }
+  .bar div { height:100%; background:var(--cust); }
+  .demo { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); padding:12px 18px;
+          display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; }
+  .demo .lbl { color:var(--grey); font-weight:700; margin-right:6px; }
+  .hide { display:none !important; }
+  .now { display:flex; gap:40px; align-items:flex-end; flex-wrap:wrap; }
+  .now .v { font-size:56px; font-weight:900; line-height:1; }
+  .now .l { color:var(--grey); font-size:16px; margin-top:6px; }
+  .bigbar { height:18px; background:var(--line); border-radius:99px; overflow:hidden; margin-top:18px; }
+  .bigbar div { height:100%; background:var(--cust); }
+  nav { align-items:flex-start; }
+  .navcol { flex:1; display:flex; flex-direction:column; }
+  .navcol [data-v] { width:100%; }
+  .navcol.open [data-v].on { border-radius:14px 14px 0 0; }
+  .navcol[data-col="customer"] { --c:var(--cust); --cd:#0b6f5f; }
+  .navcol[data-col="operator"] { --c:var(--op); --cd:#1f4466; }
+  .navcol[data-col="europress"] { --c:var(--ep); --cd:#167a41; }
+  .sub { display:flex; }
+  .sub button, .sub select { flex:1; border:2px solid var(--c); border-top:0; background:#fff; color:var(--c);
+                  font-size:14px; font-weight:800; cursor:pointer; border-radius:0; min-width:0; min-height:36px; padding:3px 6px; line-height:1.15; }
+  .sub select { border-radius:0 0 14px 14px; padding:0 12px; text-align:center; }
+  .sub button + button { border-left:0; }
+  .sub button:first-child { border-bottom-left-radius:14px; }
+  .sub button:last-child { border-bottom-right-radius:14px; }
+  .sub button.on { background:var(--cd); border-color:var(--c); color:#fff; }
+  #c-setup h2 { text-align:center; }
+  #c-setup .choice { justify-content:center; }
+  #c-setup .opcard { min-height:70px; }
+  #c-setup .opcard, .ophead { display:grid; grid-template-columns:1fr 130px; white-space:nowrap; align-items:center; text-align:left; }
+  .ophead { padding:0 16px 4px; color:var(--grey); font-size:14px; font-weight:700; }
+  .ophead span:last-child, .opcard .vcol { text-align:center; display:flex; justify-content:center; }
+  .split { display:grid; grid-template-columns:1fr 3px 1fr; gap:22px; align-items:stretch; }
+  .divider { background:#c9d3d0; border-radius:3px; }
+  .split .smartcard { height:100%; justify-content:center; }
+  @media (max-width:700px) { .split { grid-template-columns:1fr; } .divider { height:3px; } }
+  .smartcard { flex-direction:column; gap:4px !important; padding:24px; }
+  .smartword { font-size:40px; font-weight:900; color:#0aa2d6; letter-spacing:2px; line-height:1; }
+  .vdot { width:42px; height:42px; border-radius:50%; background:var(--ok); color:#fff; display:inline-flex; align-items:center;
+          justify-content:center; font-weight:900; font-size:22px; flex:none; }
+  .vdot.no { background:#dfe5e3; }
+  .foot { text-align:center; color:#aab5bd; font-size:12px; margin-top:24px; }
+  @media (max-width:700px) { .kpis { grid-template-columns:1fr; } nav [data-v] { font-size:17px; } }
+</style>
+</head>
+<body>
+<nav>
+  <div class="navcol open" data-col="customer"><button data-v="customer" class="on">Customer</button>
+    <div class="sub" data-sub="customer"><button data-step="1" class="on">Stage 1</button><button data-step="2">Stage 2</button></div></div>
+  <div class="navcol" data-col="operator"><button data-v="operator">Operator</button>
+    <div class="sub hide" data-sub="operator"><select id="op-me"></select></div></div>
+  <div class="navcol" data-col="europress"><button data-v="europress">Europress</button>
+    <div class="sub hide" data-sub="europress"><button data-ep="cert" class="on">Trusted operators</button><button data-ep="uncert">Not trusted operators</button></div></div>
+</nav>
+
+<div class="wrap">
+  <!-- CUSTOMER -->
+  <section id="v-customer">
+    <div id="c-setup">
+      <h2>Who should handle your waste pickups?</h2>
+      <div class="split">
+        <div><div class="ophead"><span>Operator</span><span>Trusted by Europress</span></div><div class="grid" id="op-choices"></div></div>
+        <div class="divider"></div>
+        <div class="card choice smart smartcard" data-choice="smart">
+          <div class="smartword">Nexora</div>
+          <div class="t">Europress takes care of it</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="c-service" class="hide">
+      <div class="card">
+        <div class="now">
+          <div><div class="v" id="now-fill"></div><div class="l">Fullness</div></div>
+          <div><div class="v" id="now-weight"></div><div class="l">Weight</div></div>
+        </div>
+      </div>
+      <div class="sp"></div>
+      <div class="hide"><div id="c-status"></div><div id="c-decide"></div><div id="k-ontime"></div><div id="k-verified"></div><div id="k-now"></div></div>
+      <div class="card">
+        <table><thead><tr><th>Pickup</th><th class="r">Fullness</th><th class="r">Weight</th></tr></thead><tbody id="c-history"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- OPERATOR -->
+  <section id="v-operator" class="hide">
+    <div id="op-view"></div>
+  </section>
+
+  <!-- EUROPRESS -->
+  <section id="v-europress" class="hide">
+    <ul class="hide" id="ep-log"></ul>
+    <div class="card" id="card-cert"><table id="ep-cert"></table></div>
+    <div class="card hide" id="card-uncert"><table id="ep-uncert"></table></div>
+  </section>
+
+</div>
+
+
+<script>
+// ---------- Data (simulated) ----------
+const OPS = [
+  { id:"alpha",   name:"Hauler Alpha",   badge:"Gold",   since:2024, verified:true,  match:+0.4, invoiceDiff:null },
+  { id:"epsilon", name:"Hauler Epsilon", badge:"Silver", since:2025, verified:true,  match:-0.5, invoiceDiff:null },
+  { id:"beta",    name:"Hauler Beta",    badge:"Bronze", since:2026, verified:true,  match:+0.6, invoiceDiff:null },
+  { id:"gamma",   name:"Hauler Gamma",   badge:null,     since:null, verified:false, match:null, invoiceDiff:+5.6 },
+  { id:"delta",   name:"Hauler Delta",   badge:null,     since:null, verified:false, match:null, invoiceDiff:+9.1 },
+];
+const EP = { // yearly totals in kg (simulated)
+  alpha:[23645,23740], epsilon:[24107,24080], beta:[23231,23320], gamma:[23379,24690], delta:[25287,27590] };
+const CUSTOMERS = { alpha:[["Cafe Aura",62,2410],["Hotel Linna",48,1830]], epsilon:[["Market Hall",71,2690],["City Library",22,840]],
+                    beta:[["Pharmacy Kupittaa",55,2090],["Gym Kupittaa",35,1330]] };
+const BACKUP = "epsilon";
+
+const opById = id => OPS.find(o => o.id === id);
+const SHIELD = `<svg class="shield" viewBox="0 0 24 24" width="46" height="46" aria-label="Trusted by Europress"><path d="M12 2 4 5v6c0 5.2 3.4 9.5 8 11 4.6-1.5 8-5.8 8-11V5z" fill="#a7b0b8"/><path d="M8 12.4l2.7 2.7 5.4-5.6" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const badge = o => o === "SMART" ? `<span class="badge SMART">SMART</span>` : `<span class="badge ${o.badge || "None"}">${o.badge ? "★" : "–"}</span>`;
+const t = kg => (kg / 1000).toFixed(2) + " t";
+
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; }; }
+function history(op) { // 5 past pickups
+  const r = rng(op.id.length * 97 + op.id.charCodeAt(0));
+  return ["2 Oct", "9 Oct", "16 Oct", "23 Oct", "30 Oct"].map(d => {
+    const w = 2600 + r() * 800;
+    const onTime = op.verified ? r() > 0.08 : r() > 0.4;
+    return { date:d, weight:w, fill:Math.round(78 + r() * 18), verified:op.verified, onTime };
+  });
+}
+
+// ---------- State ----------
+let S = { view:"customer", step:1, ep:"cert", choice:"smart", fill:64, weight:2240, status:{ k:"idle" }, log:[], extra:[], waitingDecision:false, timer:null, activeOp:null };
+
+function serviceOp(caseNo) {
+  if (S.choice === "smart") return opById(caseNo === 2 ? "beta" : "alpha");
+  return opById(S.choice);
+}
+
+// ---------- Render ----------
+const WHO = { customer:["var(--cust)","You are viewing as: Customer · Supermarket Turku"],
+              operator:["var(--op)","You are viewing as: Waste operator"],
+              europress:["var(--ep)","You are viewing as: Europress · Nexora"] };
+
+function render() { renderInner(); fit(); }
+function renderInner() {
+  document.querySelectorAll("nav [data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === S.view));
+  document.querySelectorAll("[data-sub]").forEach(el => el.classList.toggle("hide", el.dataset.sub !== S.view));
+  document.querySelectorAll(".navcol").forEach(el => el.classList.toggle("open", el.dataset.col === S.view));
+  document.querySelectorAll("[data-ep]").forEach(b => b.classList.toggle("on", b.dataset.ep === S.ep));
+  document.getElementById("card-cert").classList.toggle("hide", S.ep !== "cert");
+  document.getElementById("card-uncert").classList.toggle("hide", S.ep !== "uncert");
+  ["customer","operator","europress"].forEach(v => document.getElementById("v-" + v).classList.toggle("hide", v !== S.view));
+  renderCustomer(); renderOperator(); renderEuropress();
+}
+
+function renderCustomer() {
+  const setup = S.step === 1;
+  document.querySelectorAll("[data-step]").forEach(b => b.classList.toggle("on", +b.dataset.step === S.step));
+  document.getElementById("c-setup").classList.toggle("hide", !setup);
+  document.getElementById("c-service").classList.toggle("hide", setup);
+  document.querySelector("[data-choice=smart]").classList.toggle("sel", S.choice === "smart");
+  document.getElementById("op-choices").innerHTML = OPS.map(o => `
+    <div class="card choice opcard ${S.choice === o.id ? "sel" : ""}" data-choice="${o.id}">
+      <div class="t">${o.name}</div><div class="vcol">${o.verified ? SHIELD : ""}</div></div>`).join("");
+  document.querySelectorAll("[data-choice]").forEach(el => el.onclick = () => { S.choice = el.dataset.choice; render(); });
+  if (setup) return;
+
+  // status card
+  const st = S.status, op = S.activeOp;
+  const name = S.choice === "smart" ? "Europress (Nexora)" : opById(S.choice).name;
+  const map = {
+    idle:    ["s-wait","✓","All good","No open pickup. Handled by " + name + "."],
+    ordered: ["s-run","…","Pickup ordered", (op ? op.name : "") + " has been asked to collect."],
+    reminded:["s-run","…","Pickup ordered","Nexora reminded " + (op ? op.name : "") + " automatically. Nothing for you to do."],
+    confirmed:["s-run","✓","Pickup confirmed", (op ? op.name : "") + " will collect on Tue 09:00."],
+    collected:["s-run","✓","Collected","Waiting for the weighbridge ticket."],
+    verified:["s-ok","✓","Completed & verified", st.text || ""],
+    unverified:["s-warn","!","Completed · weight not verified", st.text || ""],
+    escalated:["s-warn","!","Your decision is needed", (op ? op.name : "") + " has not confirmed the pickup. The agreed deadline is in 4 hours."],
+    waiting: ["s-warn","…","Waiting one more day","Nexora keeps reminding the operator."],
+  }[st.k];
+  document.getElementById("c-status").innerHTML = `<div class="icon ${map[0]}">${map[1]}</div><div><div class="big">${map[2]}</div><div class="muted">${map[3]}</div></div>`;
+  document.getElementById("c-decide").innerHTML = st.k === "escalated" ? `
+    <div class="row"><button class="btn cust" onclick="decide('backup')">Send to ${opById(BACKUP).name} ★ (backup)</button>
+    <button class="btn light" onclick="decide('wait')">Wait one more day</button></div>` : "";
+
+  // KPIs + history
+  const base = S.choice === "smart" ? opById("alpha") : opById(S.choice);
+  const rows = [...S.extra, ...history(base)];
+  const onTime = rows.filter(r => r.onTime).length, ver = rows.filter(r => r.verified).length;
+  document.getElementById("k-ontime").innerHTML = `<span class="${onTime / rows.length > .85 ? "ok" : "warn"}">${onTime}/${rows.length}</span>`;
+  document.getElementById("k-verified").innerHTML = `<span class="${ver === rows.length ? "ok" : ver ? "warn" : "bad"}">${ver}/${rows.length}</span>`;
+  document.getElementById("k-now").innerHTML = S.fill ? `${S.fill}% <span class="muted">· ${(S.weight / 1000).toFixed(1)} t</span>` : `Empty <span class="muted">· just collected</span>`;
+  document.getElementById("now-fill").textContent = S.fill + "%";
+  document.getElementById("now-weight").textContent = (S.weight / 1000).toFixed(1) + " t";
+  document.getElementById("c-history").innerHTML = rows.map(r => `<tr><td>${r.date}</td><td class="r">${r.fill || 85}%</td><td class="r">${(r.weight / 1000).toFixed(1)} t</td></tr>`).join("");
+}
+
+function renderOperator() {
+  const sel = document.getElementById("op-me");
+  if (!sel.options.length) { sel.innerHTML = OPS.map(o => `<option value="${o.id}">${o.name}</option>`).join(""); sel.onchange = render; }
+  const o = opById(sel.value);
+  const v = document.getElementById("op-view");
+  if (!o.verified) { v.innerHTML = `<div class="card" style="font-size:22px;font-weight:900">Not trusted</div>`; return; }
+  const active = S.activeOp && S.activeOp.id === o.id && S.status.k !== "idle";
+  const req = active ? `<div class="card" style="border-color:var(--op)"><div class="muted">Pickup request</div>
+      <div style="font-size:22px;font-weight:900">Supermarket Turku · ${S.fill}% full · ${t(S.weight)}</div>
+      <div class="muted">${{ ordered:"New request", reminded:"Reminder from Nexora: please confirm", confirmed:"Confirmed · Tue 09:00",
+        collected:"Collected · share the weighbridge ticket", verified:"Done · ticket shared and verified", escalated:"Overdue · customer asked to decide",
+        unverified:"Done", waiting:"Reminder from Nexora: please confirm" }[S.status.k]}</div></div><div class="sp"></div>` : "";
+  const list = (CUSTOMERS[o.id] || []).map(([n, f, w]) => `<tr><td>${n}</td><td class="r">${f}%</td><td class="r">${(w / 1000).toFixed(1)} t</td></tr>`).join("");
+  v.innerHTML = `<div class="card"><div class="row">${SHIELD}<b>Trusted by Europress since ${o.since}</b></div></div>
+    <div class="sp"></div>${req}<div class="card"><table><thead><tr><th>Customer</th><th class="r">Fullness</th><th class="r">Weight</th></tr></thead><tbody>${list}</tbody></table></div>`;
+}
+
+function renderEuropress() {
+  document.getElementById("ep-log").innerHTML = S.log.length ? S.log.map(e =>
+    `<li><span class="time">${e.time}</span><span class="who2 w-${e.who}">${e.who}</span><span>${e.text}</span></li>`).join("")
+    : "";
+  const table = (ids, invoice) => {
+    const rows = ids.map(id => { const o = opById(id), [a, b] = EP[id]; return { o, a, b, d:(b - a) / a * 100 }; });
+    const A = rows.reduce((s, r) => s + r.a, 0), B = rows.reduce((s, r) => s + r.b, 0), n = rows.length;
+    const cls = d => Math.abs(d) <= 2 ? "ok" : Math.abs(d) <= 5 ? "warn" : "bad";
+    const fmt = d => (d > 0 ? "+" : "") + d.toFixed(1) + "%";
+    return `<thead><tr><th>Operator</th><th class="r">Europress</th><th class="r">${invoice ? "Invoices" : "Operator"}</th><th class="r">Difference</th></tr></thead><tbody>
+      ${rows.map(r => `<tr><td>${badge(r.o)} ${r.o.name}</td><td class="r">${t(r.a)}</td><td class="r">${t(r.b)}</td><td class="r ${cls(r.d)}">${fmt(r.d)}</td></tr>`).join("")}
+      <tr class="sum"><td>Total</td><td class="r">${t(A)}</td><td class="r">${t(B)}</td><td class="r ${cls((B - A) / A * 100)}">${fmt((B - A) / A * 100)}</td></tr>
+      <tr class="sum"><td>Average</td><td class="r">${t(A / n)}</td><td class="r">${t(B / n)}</td>
+        <td class="r ${cls(rows.reduce((s, r) => s + Math.abs(r.d), 0) / n)}">±${(rows.reduce((s, r) => s + Math.abs(r.d), 0) / n).toFixed(1)}%</td></tr></tbody>`;
+  };
+  document.getElementById("ep-cert").innerHTML = table(["alpha", "epsilon", "beta"], false);
+  document.getElementById("ep-uncert").innerHTML = table(["gamma", "delta"], true);
+}
+
+// ---------- Demo cases (Nexora flow) ----------
+function log(time, who, text) { S.log.unshift({ time, who, text }); }
+function run(steps) {
+  clearTimeout(S.timer);
+  let i = 0;
+  const next = () => { if (i >= steps.length) return; steps[i++](); render(); if (i < steps.length && !S.waitingDecision) S.timer = setTimeout(next, 1700); };
+  next();
+}
+
+function play(caseNo) {
+  if (!S.choice) S.choice = "smart";
+  S.view = "customer"; S.waitingDecision = false;
+  const op = serviceOp(caseNo); S.activeOp = op;
+  const share = op.verified;
+  const steps = [
+    () => { S.fill = 82; S.weight = 2900; S.status = { k:"ordered" };
+            log("Mon 08:00", "Nexora", `Container 82% full · ${t(2900)} → pickup request sent to ${op.name}`); },
+    () => { S.status = { k:"reminded" }; log("Mon 10:00", "Nexora", `No confirmation within 2 h → reminder sent to ${op.name} automatically`); },
+  ];
+  if (caseNo === 1) steps.push(
+    () => { S.status = { k:"confirmed" }; log("Mon 10:20", "Operator", `${op.name} confirmed pickup for Tue 09:00`); },
+    () => { S.status = { k:"collected" }; S.fill = 0; S.weight = 0; log("Tue 09:05", "Operator", "Container collected"); },
+    ...(share ? [
+      () => { log("Tue 11:30", "Operator", `Weighbridge ticket shared: ${t(2940)}`); },
+      () => { S.status = { k:"verified", text:"The operator's weight matches." };
+              S.extra.unshift({ date:"Tue 5 Nov", weight:2940, verified:true, onTime:true });
+              log("Tue 11:30", "Nexora", "Compared with machine weight: +1.4% → Completed & verified"); },
+    ] : [
+      () => { log("Tue 14:00", "Nexora", "Weighbridge ticket missing → requested automatically"); },
+      () => { S.status = { k:"unverified", text:`${op.name} did not share its weight.` };
+              S.extra.unshift({ date:"Tue 5 Nov", weight:2900, verified:false, onTime:true });
+              log("Wed 09:00", "Nexora", "No ticket received → weight not verified (machine weight kept as evidence)"); },
+    ]));
+  else steps.push(
+    () => { log("Mon 14:00", "Nexora", `Second reminder sent to ${op.name} · still no answer`); },
+    () => { S.status = { k:"escalated" }; S.waitingDecision = true;
+            log("Tue 05:00", "Nexora", "Agreed deadline in 4 h → customer asked to decide (needs customer approval)"); });
+  run(steps);
+}
+
+function decide(choice) {
+  const backup = opById(BACKUP);
+  S.waitingDecision = false;
+  if (choice === "wait") {
+    S.status = { k:"waiting" }; log("Tue 05:10", "Customer", "Decided: wait one more day"); render(); return;
+  }
+  log("Tue 05:10", "Customer", `Decided: send to backup ${backup.name}`);
+  S.activeOp = backup;
+  run([
+    () => { S.status = { k:"ordered" }; log("Tue 05:10", "Nexora", `Pickup request sent to ${backup.name}`); },
+    () => { S.status = { k:"confirmed" }; log("Tue 06:00", "Operator", `${backup.name} confirmed pickup for Tue 09:00`); },
+    () => { S.status = { k:"collected" }; S.fill = 0; S.weight = 0; log("Tue 09:10", "Operator", "Container collected"); },
+    () => { S.status = { k:"verified", text:"The operator's weight matches." };
+            S.extra.unshift({ date:"Tue 5 Nov", weight:2880, verified:true, onTime:true });
+            log("Tue 11:00", "Nexora", "Ticket shared and compared: -0.7% → Completed & verified"); },
+  ]);
+}
+
+function resetDemo() {
+  clearTimeout(S.timer);
+  S = { ...S, fill:64, weight:2240, status:{ k:"idle" }, log:[], extra:[], waitingDecision:false, activeOp:null };
+  render();
+}
+
+document.querySelectorAll("nav [data-v]").forEach(b => b.onclick = () => { S.view = b.dataset.v; render(); });
+document.querySelectorAll("[data-step]").forEach(b => b.onclick = () => { S.step = +b.dataset.step; render(); });
+document.querySelectorAll("[data-ep]").forEach(b => b.onclick = () => { S.ep = b.dataset.ep; render(); });
+S.log = [
+  { time:"Tue 11:30", who:"Nexora", text:"Weighbridge ticket compared with machine weight → Completed & verified" },
+  { time:"Tue 09:05", who:"Operator", text:"Hauler Alpha collected the container" },
+  { time:"Mon 10:20", who:"Operator", text:"Hauler Alpha confirmed pickup" },
+  { time:"Mon 10:00", who:"Nexora", text:"No confirmation within 2 h → reminder sent automatically" },
+  { time:"Mon 08:00", who:"Nexora", text:"Container 82% full → pickup request sent to Hauler Alpha" },
+];
+function fit() { // scale each page so it fills the screen without scrolling
+  document.body.style.zoom = 1;
+  const h = document.querySelector("nav").offsetHeight + document.querySelector(".wrap").offsetHeight + 10;
+  document.body.style.zoom = Math.max(0.5, Math.min(innerWidth / 780, innerHeight / h));
+}
+addEventListener("resize", fit);
+fit();
+render();
+</script>
+</body>
+</html>
